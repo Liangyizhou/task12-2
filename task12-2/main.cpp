@@ -4,14 +4,70 @@
 using namespace std;
 using namespace cv;
 
+int calcGaussianBackground(vector<Mat> srcMats, Mat & meanMat, Mat &varMat)//遍历像素取高斯分布的参数
+{
+
+	int rows = srcMats[0].rows;
+	int cols = srcMats[0].cols;
+
+
+	for (int h = 0; h < rows; h++)
+	{
+		for (int w = 0; w < cols; w++)
+		{
+
+			int sum = 0;
+			float var = 0;
+			//求均值
+			for (int i = 0; i < srcMats.size(); i++) {
+				sum += srcMats[i].at<uchar>(h, w);
+			}
+			meanMat.at<uchar>(h, w) = sum / srcMats.size();
+			//求方差
+			for (int i = 0; i < srcMats.size(); i++) {
+				var += pow((srcMats[i].at<uchar>(h, w) - meanMat.at<uchar>(h, w)), 2);
+			}
+			varMat.at<float>(h, w) = var / srcMats.size();
+		}
+	}
+
+	return 0;
+}
+
+
+int gaussianThreshold(Mat srcMat, Mat meanMat,Mat varMat, float weight, Mat & dstMat)//遍历每一帧跟参数对比
+
+{
+	int dstI;
+	int rows = srcMat.rows;
+	int cols = srcMat.cols;
+
+	for (int h = 0; h < rows; h++)
+	{
+		for (int w = 0; w < cols; w++)
+		{
+			int dif = abs(  srcMat.at<uchar>(h, w)-  meanMat.at<uchar>(h, w));
+			int th = weight * varMat.at<float>(h, w);
+
+			if (dif > th) {
+
+				dstMat.at<uchar>(h, w) = 255;
+			}
+			else {
+				dstMat.at<uchar>(h, w) = 0;
+			}
+		}
+	}
+
+	return 0;
+}
+
+
 int main() {
 
-}
-int bgSubGaussian_demo()
-{
 	//----------------------读取视频文件--------------------------
 	VideoCapture capVideo(0);
-	//VideoCapture capVideo("../testImages\\vtest.avi");
+	
 
 	//如果视频打开失败
 	if (!capVideo.isOpened()) {
